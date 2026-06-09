@@ -148,7 +148,7 @@ El cliente no puede descargar su certificado desde la app, lleva 3 días intenta
 
 <script>
 // ⚠️ REEMPLAZA con la URL de tu Apps Script desplegado
-var APPS_SCRIPT_URL = 'https://script.google.com/a/macros/nubank.com.br/s/AKfycbw3mfHmpXoyuhKHbVHjuQXEVtKypPmTrleWdMe3KJaUBuNkD6PO82LoJaviWsZwEY4/exec';
+var APPS_SCRIPT_URL = 'https://script.google.com/a/macros/nubank.com.br/s/AKfycbyv6egAGVfvw2Zote_e4TT_590a3ST3pLFjm6UDCGiPVD5XkO0RButpSDO3-juFgYI/exec';
 
 var tipo = 'peticion';
 document.getElementById('fecha_resp').valueAsDate = new Date();
@@ -222,13 +222,21 @@ function limpiar(){
 function guardarDrive() {
   var carta = document.getElementById('carta').innerText;
   if (carta.includes('Describe el contexto')) { showToast('⚠️ Genera la carta primero'); return; }
-  if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL === 'TU_APPS_SCRIPT_URL_AQUI') {
-    showToast('⚠️ Configura APPS_SCRIPT_URL en el código'); return;
-  }
-  var nombre  = document.getElementById('nombre').value.trim() || 'Cliente';
-  var params  = 'action=save&nombre=' + encodeURIComponent(nombre) + '&content=' + encodeURIComponent(carta);
-  // Abre en pestaña nueva — el Apps Script crea el doc y muestra confirmación
-  window.open(APPS_SCRIPT_URL + '?' + params, '_blank');
+  var nombre = document.getElementById('nombre').value.trim() || 'Cliente';
+  // Usar formulario POST para evitar límite de URL
+  var form = document.createElement('form');
+  form.method = 'POST';
+  form.action = APPS_SCRIPT_URL;
+  form.target = '_blank';
+  var fNombre = document.createElement('input');
+  fNombre.type = 'hidden'; fNombre.name = 'nombre'; fNombre.value = nombre;
+  var fContent = document.createElement('input');
+  fContent.type = 'hidden'; fContent.name = 'content'; fContent.value = carta;
+  form.appendChild(fNombre);
+  form.appendChild(fContent);
+  document.body.appendChild(form);
+  form.submit();
+  document.body.removeChild(form);
   showToast('⏳ Guardando en Drive...');
 }
 function showErr(m){var e=document.getElementById('err');e.textContent='⚠️ '+m;e.classList.add('show');}
@@ -423,5 +431,7 @@ La suscripción del pagaré es un requisito estándar para el funcionamiento de 
 --- TEMA NUEVO ---
 Si el contexto no coincide con ningún template anterior, redacta desde cero manteniendo EXACTAMENTE la misma estructura, tono y formato. Responde el punto central del cliente con empatía y claridad. Si el caso tiene relación con algún contrato, cítalo con el link completo y la sección exacta.`;
 </script>
+</body>
+</html>
 </body>
 </html>

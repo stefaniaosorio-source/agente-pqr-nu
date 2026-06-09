@@ -134,8 +134,9 @@ El cliente no puede descargar su certificado desde la app, lleva 3 días intenta
     <span class="ptitle">Vista previa de la carta</span>
     <div class="pacts">
       <button class="btn b-ghost" onclick="limpiar()">🔄 Nueva</button>
-      <button class="btn b-sec" onclick="copiar()">📋 Copiar toda la carta</button>
+      <button class="btn b-sec" onclick="copiar()">📋 Copiar</button>
       <button class="btn b-sec" onclick="window.print()">🖨️ PDF</button>
+      <button class="btn b-green" id="btnDrive" onclick="guardarDrive()" style="background:#820AD1;color:white">💾 Guardar en Drive</button>
     </div>
   </div>
   <div class="lwrap">
@@ -146,6 +147,9 @@ El cliente no puede descargar su certificado desde la app, lleva 3 días intenta
 <div class="toast" id="toast"></div>
 
 <script>
+// ⚠️ REEMPLAZA con la URL de tu Apps Script desplegado
+var APPS_SCRIPT_URL = 'https://script.google.com/a/macros/nubank.com.br/s/AKfycbynuq3ZoUJatONnqPvMyHFXB6MxokWZEPfsr31OdPZpHZY1SVHga_Wt-ReyLyscutI/exec';
+
 var tipo = 'peticion';
 document.getElementById('fecha_resp').valueAsDate = new Date();
 
@@ -214,6 +218,18 @@ function limpiar(){
   tipo='peticion';document.getElementById('bp').classList.add('on');document.getElementById('bq').classList.remove('on');
   document.getElementById('carta').innerHTML='<div class="ph"><span class="big">✨</span>Describe el contexto de la PQR<br>y haz clic en "Generar carta con IA".</div>';
   hideErr();
+}
+function guardarDrive() {
+  var carta = document.getElementById('carta').innerText;
+  if (carta.includes('Describe el contexto')) { showToast('⚠️ Genera la carta primero'); return; }
+  if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL === 'TU_APPS_SCRIPT_URL_AQUI') {
+    showToast('⚠️ Configura APPS_SCRIPT_URL en el código'); return;
+  }
+  var nombre  = document.getElementById('nombre').value.trim() || 'Cliente';
+  var params  = 'action=save&nombre=' + encodeURIComponent(nombre) + '&content=' + encodeURIComponent(carta);
+  // Abre en pestaña nueva — el Apps Script crea el doc y muestra confirmación
+  window.open(APPS_SCRIPT_URL + '?' + params, '_blank');
+  showToast('⏳ Guardando en Drive...');
 }
 function showErr(m){var e=document.getElementById('err');e.textContent='⚠️ '+m;e.classList.add('show');}
 function hideErr(){document.getElementById('err').classList.remove('show');}

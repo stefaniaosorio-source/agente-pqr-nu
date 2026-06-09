@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agente PQR · Nu</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root { --nu: #820AD1; --nu-light: #f3e8ff; --nu-mid: #d8b4fe; --bg: #f5f3ff; --card: #fff; --border: #e9d5ff; --text: #1a0533; --muted: #6b7280; }
+body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+.setup-overlay { position: fixed; inset: 0; background: rgba(26,5,51,.75); display: flex; align-items: center; justify-content: center; z-index: 999; }
+.setup-box { background: white; border-radius: 16px; padding: 36px 32px; max-width: 440px; width: 90%; box-shadow: 0 8px 40px rgba(130,10,209,.25); }
+.setup-logo { width: 48px; height: 48px; background: var(--nu); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 900; font-size: 20px; margin: 0 auto 16px; }
+.setup-box h2 { text-align: center; font-size: 18px; margin-bottom: 6px; }
+.setup-box p { text-align: center; font-size: 13px; color: var(--muted); margin-bottom: 20px; line-height: 1.5; }
+.setup-box input { width: 100%; border: 1.5px solid var(--border); border-radius: 8px; padding: 10px 12px; font-size: 13px; font-family: monospace; outline: none; margin-bottom: 12px; }
+.setup-box input:focus { border-color: var(--nu); box-shadow: 0 0 0 3px rgba(130,10,209,.1); }
+.setup-btn { width: 100%; padding: 12px; border: none; border-radius: 9px; background: var(--nu); color: white; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all .15s; }
+.setup-btn:hover { background: #6b09af; }
+.setup-hint { font-size: 11px; color: var(--muted); text-align: center; margin-top: 10px; }
+.setup-hint a { color: var(--nu); }
+header { background: var(--nu); color: white; padding: 14px 28px; display: flex; align-items: center; gap: 12px; }
+.logo { width: 34px; height: 34px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; color: var(--nu); font-size: 15px; flex-shrink: 0; }
+header h1 { font-size: 17px; font-weight: 700; }
+header p { font-size: 11px; opacity: .8; margin-top: 1px; }
+.tk-badge { margin-left: auto; background: rgba(255,255,255,.2); border-radius: 20px; padding: 5px 14px; font-size: 11px; font-weight: 600; cursor: pointer; transition: background .15s; }
+.tk-badge:hover { background: rgba(255,255,255,.35); }
+.layout { display: grid; grid-template-columns: 360px 1fr; height: calc(100vh - 62px); }
+.left { background: var(--card); border-right: 1.5px solid var(--border); overflow-y: auto; padding: 20px 16px; display: flex; flex-direction: column; gap: 14px; }
+.sec { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: var(--nu); margin-bottom: 6px; }
+.fg { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
+label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .3px; }
+input, textarea { border: 1.5px solid var(--border); border-radius: 7px; padding: 8px 10px; font-size: 13px; font-family: inherit; color: var(--text); background: #fafafa; outline: none; transition: border-color .15s; width: 100%; }
+input:focus, textarea:focus { border-color: var(--nu); box-shadow: 0 0 0 3px rgba(130,10,209,.1); background: white; }
+textarea { resize: vertical; line-height: 1.5; }
+.tipo-g { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.tipo-b { border: 2px solid var(--border); border-radius: 9px; padding: 10px 6px; text-align: center; cursor: pointer; background: #fafafa; transition: all .15s; font-size: 12px; font-weight: 600; color: var(--muted); user-select: none; }
+.tipo-b span { font-size: 20px; display: block; margin-bottom: 3px; }
+.tipo-b.on { border-color: var(--nu); background: var(--nu-light); color: var(--nu); }
+.div { height: 1px; background: var(--border); }
+.btn-gen { width: 100%; padding: 13px; border: none; border-radius: 9px; background: var(--nu); color: white; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all .15s; display: flex; align-items: center; justify-content: center; gap: 7px; }
+.btn-gen:hover:not(:disabled) { background: #6b09af; transform: translateY(-1px); box-shadow: 0 4px 14px rgba(130,10,209,.35); }
+.btn-gen:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+.spin-wrap { display: none; align-items: center; gap: 10px; background: var(--nu-light); border-radius: 8px; padding: 10px 14px; font-size: 13px; color: var(--nu); margin-top: 8px; }
+.spin-wrap.show { display: flex; }
+.spin { width: 16px; height: 16px; border: 2px solid rgba(130,10,209,.25); border-top-color: var(--nu); border-radius: 50%; animation: sp .7s linear infinite; flex-shrink: 0; }
+@keyframes sp { to { transform: rotate(360deg); } }
+.err { display: none; background: #fef2f2; border: 1.5px solid #fecaca; border-radius: 8px; padding: 10px 12px; font-size: 12px; color: #dc2626; margin-top: 8px; }
+.err.show { display: block; }
+.cl-links { display: flex; flex-direction: column; gap: 5px; }
+.cl { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--nu); text-decoration: none; padding: 5px 8px; border-radius: 6px; background: var(--nu-light); }
+.cl:hover { background: var(--nu-mid); }
+.right { display: flex; flex-direction: column; background: #f9f6ff; overflow: hidden; }
+.phead { background: white; border-bottom: 1.5px solid var(--border); padding: 12px 22px; display: flex; align-items: center; justify-content: space-between; }
+.ptitle { font-size: 13px; font-weight: 700; color: var(--nu); }
+.pacts { display: flex; gap: 7px; }
+.btn { display: inline-flex; align-items: center; gap: 5px; padding: 7px 14px; border: none; border-radius: 7px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all .15s; }
+.b-sec { background: var(--nu-light); color: var(--nu); border: 1.5px solid var(--border); }
+.b-sec:hover { background: var(--nu-mid); }
+.b-ghost { background: transparent; color: var(--muted); border: 1.5px solid var(--border); }
+.b-ghost:hover { background: white; }
+.lwrap { flex: 1; overflow-y: auto; padding: 28px; display: flex; justify-content: center; }
+.letter { background: white; width: 100%; max-width: 700px; min-height: 520px; border-radius: 12px; box-shadow: 0 2px 16px rgba(130,10,209,.08); padding: 44px 52px; font-family: 'Georgia', serif; font-size: 13.5px; line-height: 1.85; color: #1a0533; white-space: pre-wrap; word-break: break-word; }
+.ph { color: #c4b5fd; font-style: italic; font-size: 13px; text-align: center; margin-top: 60px; font-family: 'Segoe UI', sans-serif; }
+.ph .big { font-size: 38px; display: block; margin-bottom: 10px; }
+.toast { position: fixed; bottom: 22px; right: 22px; background: var(--text); color: white; padding: 10px 16px; border-radius: 8px; font-size: 13px; transform: translateY(60px); opacity: 0; transition: all .25s; z-index: 9999; }
+.toast.show { transform: translateY(0); opacity: 1; }
+@media print { header,.left,.phead,.setup-overlay{display:none!important} .layout{display:block;height:auto} .right{background:white} .lwrap{padding:0} .letter{box-shadow:none;border-radius:0;max-width:100%} }
+</style>
+</head>
+<body>
+
+<div class="setup-overlay" id="overlay">
+  <div class="setup-box">
+    <div class="setup-logo">Nu</div>
+    <h2>Agente PQR Nu</h2>
+    <p>Ingresa tu GitHub Token para activar la IA.<br>Se guarda solo en esta sesión del navegador.</p>
+    <input type="password" id="tkInput" placeholder="github_pat_...">
+    <button class="setup-btn" onclick="activar()">✨ Activar Agente</button>
+    <p class="setup-hint">¿No tienes token? <a href="https://github.com/settings/tokens" target="_blank">Generar aquí</a> → Add permissions → Models</p>
+  </div>
+</div>
+
+<header>
+  <div class="logo">Nu</div>
+  <div><h1>Agente PQR Nu</h1><p>Powered by GitHub Models · GPT-4o</p></div>
+  <div class="tk-badge" onclick="cambiarToken()">🔑 Cambiar token</div>
+</header>
+
+<div class="layout">
+<div class="left">
+  <div>
+    <div class="sec">Tipo de PQR</div>
+    <div class="tipo-g">
+      <div class="tipo-b on" id="bp" onclick="setTipo('peticion')"><span>📋</span>Derecho de Petición</div>
+      <div class="tipo-b" id="bq" onclick="setTipo('queja')"><span>⚠️</span>Queja</div>
+    </div>
+  </div>
+  <div class="div"></div>
+  <div>
+    <div class="sec">Datos del cliente</div>
+    <div class="fg"><label>Nombre completo</label><input id="nombre" type="text" placeholder="Ej: María González Rodríguez"></div>
+    <div class="fg"><label>Fecha de la solicitud</label><input id="fecha_sol" type="date"></div>
+    <div class="fg"><label>Radicado (opcional)</label><input id="radicado" type="text" placeholder="Ej: 3199000"></div>
+    <div class="fg"><label>Fecha de respuesta</label><input id="fecha_resp" type="date"></div>
+  </div>
+  <div class="div"></div>
+  <div>
+    <div class="sec">Contexto de la PQR</div>
+    <div class="fg">
+      <label>Describe qué solicita o reclama el cliente</label>
+      <textarea id="contexto" rows="8" placeholder="Ej: El cliente solicita aumento de cupo de su tarjeta. Actualmente tiene $2.000.000.
+
+Para temas nuevos:
+El cliente no puede descargar su certificado desde la app, lleva 3 días intentando."></textarea>
+    </div>
+  </div>
+  <button class="btn-gen" id="btnGen" onclick="generar()">✨ Generar carta con IA</button>
+  <div class="spin-wrap" id="spinner"><div class="spin"></div><span>La IA está redactando la carta...</span></div>
+  <div class="err" id="err"></div>
+  <div class="div"></div>
+  <div>
+    <div class="sec">Contratos de referencia</div>
+    <div class="cl-links">
+      <a class="cl" href="https://contracts.nu.com.co/credit-card/contrato-version-3.pdf" target="_blank">📄 Contrato Tarjeta de Crédito</a>
+      <a class="cl" href="https://contracts.nu.com.co/savings-account/contrato-version-3.pdf" target="_blank">📄 Contrato Cuenta Ahorros / Débito</a>
+      <a class="cl" href="https://cdn.nubank.com.br/colombia/terminos-y-condiciones-nu-plus.pdf" target="_blank">📄 Términos Nu Plus</a>
+    </div>
+  </div>
+</div>
+
+<div class="right">
+  <div class="phead">
+    <span class="ptitle">Vista previa de la carta</span>
+    <div class="pacts">
+      <button class="btn b-ghost" onclick="limpiar()">🔄 Nueva</button>
+      <button class="btn b-sec" onclick="copiar()">📋 Copiar toda la carta</button>
+      <button class="btn b-sec" onclick="window.print()">🖨️ PDF</button>
+    </div>
+  </div>
+  <div class="lwrap">
+    <div class="letter" id="carta"><div class="ph"><span class="big">✨</span>Describe el contexto de la PQR<br>y haz clic en "Generar carta con IA".</div></div>
+  </div>
+</div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+var tipo = 'peticion';
+document.getElementById('fecha_resp').valueAsDate = new Date();
+
+function activar() {
+  var t = document.getElementById('tkInput').value.trim();
+  if (!t) { alert('Ingresa tu GitHub token'); return; }
+  sessionStorage.setItem('gh_tk', t);
+  document.getElementById('overlay').style.display = 'none';
+}
+function cambiarToken() {
+  sessionStorage.removeItem('gh_tk');
+  document.getElementById('tkInput').value = '';
+  document.getElementById('overlay').style.display = 'flex';
+}
+window.addEventListener('load', function() {
+  if (sessionStorage.getItem('gh_tk')) document.getElementById('overlay').style.display = 'none';
+  document.getElementById('tkInput').addEventListener('keydown', function(e){ if(e.key==='Enter') activar(); });
+});
+function setTipo(t) {
+  tipo = t;
+  document.getElementById('bp').classList.toggle('on', t==='peticion');
+  document.getElementById('bq').classList.toggle('on', t==='queja');
+}
+var MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+function fL(v){ if(!v) return 'xx de xxx del 2026'; var p=v.split('-'); return parseInt(p[2])+' de '+MESES[parseInt(p[1])-1]+' del '+p[0]; }
+function fC(v){ if(!v) return 'DD/MM/AAAA'; var p=v.split('-'); return p[2]+'/'+p[1]+'/'+p[0]; }
+
+async function generar() {
+  var token = sessionStorage.getItem('gh_tk');
+  if (!token) { document.getElementById('overlay').style.display='flex'; return; }
+  var contexto = document.getElementById('contexto').value.trim();
+  if (!contexto) { showErr('Describe el contexto de la PQR.'); return; }
+  hideErr();
+  document.getElementById('btnGen').disabled = true;
+  document.getElementById('spinner').classList.add('show');
+  document.getElementById('carta').innerHTML = '<div class="ph"><span class="big" style="font-size:28px">⏳</span>Generando con IA...</div>';
+  var userMsg =
+    'Tipo: '+(tipo==='peticion'?'Derecho de Petición':'Queja')+'\n'+
+    'Nombre del cliente: '+(document.getElementById('nombre').value.trim()||'xxxx')+'\n'+
+    'Fecha solicitud: '+fC(document.getElementById('fecha_sol').value)+'\n'+
+    'Fecha de respuesta: '+fL(document.getElementById('fecha_resp').value)+'\n'+
+    (document.getElementById('radicado').value?'Radicado: '+document.getElementById('radicado').value+'\n':'')+
+    'Contexto: '+contexto+'\n\nGenera la carta completa lista para enviar. Solo el texto de la carta, sin explicaciones.';
+  try {
+    var r = await fetch('https://models.inference.ai.azure.com/chat/completions',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+      body:JSON.stringify({model:'gpt-4o',messages:[{role:'system',content:SP},{role:'user',content:userMsg}],temperature:0.2,max_tokens:2048})
+    });
+    if(r.status===401){showErr('Token inválido. Haz clic en "Cambiar token".');document.getElementById('btnGen').disabled=false;document.getElementById('spinner').classList.remove('show');return;}
+    if(!r.ok){var e=await r.json();showErr('Error '+(e.error?.message||r.status));document.getElementById('btnGen').disabled=false;document.getElementById('spinner').classList.remove('show');return;}
+    var d = await r.json();
+    document.getElementById('carta').textContent = d.choices[0].message.content;
+  } catch(e) { showErr('Error de conexión: '+e.message); }
+  document.getElementById('btnGen').disabled=false;
+  document.getElementById('spinner').classList.remove('show');
+}
+function copiar(){
+  var t=document.getElementById('carta').innerText;
+  if(t.includes('Describe el')){showToast('⚠️ La carta está vacía');return;}
+  navigator.clipboard.writeText(t).then(function(){showToast('✅ Carta copiada al portapapeles');}).catch(function(){var ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);showToast('✅ Copiada');});
+}
+function limpiar(){
+  ['nombre','fecha_sol','radicado','contexto'].forEach(function(id){document.getElementById(id).value='';});
+  document.getElementById('fecha_resp').valueAsDate=new Date();
+  tipo='peticion';document.getElementById('bp').classList.add('on');document.getElementById('bq').classList.remove('on');
+  document.getElementById('carta').innerHTML='<div class="ph"><span class="big">✨</span>Describe el contexto de la PQR<br>y haz clic en "Generar carta con IA".</div>';
+  hideErr();
+}
+function showErr(m){var e=document.getElementById('err');e.textContent='⚠️ '+m;e.classList.add('show');}
+function hideErr(){document.getElementById('err').classList.remove('show');}
+function showToast(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2800);}
+
+var SP = `## IDENTIDAD
+Eres el Agente PQR Nu, especialista en redacción de respuestas a PQR de Nu Financiera Colombia.
+
+## ESTRUCTURA OBLIGATORIA — SIEMPRE
+
+Bogotá, D.C., [día] de [mes] del [año]
+
+Señor(a):
+[Nombre completo del cliente]
+
+Ref: Respuesta a [Derecho de petición / Queja]
+
+Estimado(a) [primer nombre],
+
+En atención a tu [petición/queja] presentada el pasado [DD/MM/AAAA], [con radicado XXXXX, ]dentro del término legal establecido en la Ley 1755 de 2015, damos respuesta en los siguientes términos:
+
+Queremos informarte que en Nu Financiera, damos una gran importancia a la transparencia en todas nuestras interacciones por lo que nos esforzamos por brindarte información precisa y clara sobre nuestros productos y servicios. Además, nos comprometemos a garantizar la seguridad de tus datos y transacciones.
+
+[CUERPO]
+
+Habiendo respondido en profundidad tu [petición/queja], te recordamos que estamos para ayudarte con lo que necesites.
+
+Agradecemos tu atención,
+
+Atentamente,
+
+Equipo Nu
+
+## NUNCA
+Admitir culpa, revelar info interna, comprometer fechas, prometer devoluciones, mencionar empleados, contradecir contratos, lenguaje informal.
+
+## CONTRATOS — CITAR AUTOMÁTICAMENTE CUANDO APLIQUE
+- TC: https://contracts.nu.com.co/credit-card/contrato-version-3.pdf
+  Aumento cupo → pág 2. Cancelación con deuda → pág 23. Compras exterior → pág 13.
+- CA: https://contracts.nu.com.co/savings-account/contrato-version-3.pdf
+  Cancelación con saldo → apartado 17. Seguros → Cap IX num 9.2.2.
+- Nu Plus T&C: https://cdn.nubank.com.br/colombia/terminos-y-condiciones-nu-plus.pdf
+
+## RESPUESTAS POR TEMA
+CUPO AUMENTO: Aumentos automáticos y periódicos, no manuales. Citar TC pág 2. Empático.
+CUPO REDUCCIÓN: Diferencia Cupo vs Límite. App: Tarjeta → Ajuste de Cupo. Reporta al mes siguiente.
+CANCELACIÓN NO INICIADA: Proceso 3 pasos. Canal: chat App o 01 800 917 2000 / 601 357 11 02.
+CANCELACIÓN EN CURSO: Confirmada recibida, etapa final. Recibirá confirmación por correo.
+CANCELACIÓN CONFIRMADA: Paz y salvo enviado a [correo] el [fecha]. Sin productos activos.
+CANCELACIÓN CON DEUDA TC: Saldo debe ser $0. Citar TC pág 23. Invitar a pagar y contactar.
+CANCELACIÓN SALDO CA: No puede haber fondos. Citar CA apart 17. Retirar/transferir primero.
+SEGUROS: Solo FOGAFIN hasta 50M para CA. No hay seguros de viaje/médico/robo. Citar CA Cap IX 9.2.2.
+AMPARADAS PRIVACIDAD: Titular 100% responsable. Debe ver todo. No se puede ocultar nada.
+NOTIFICACIONES: Configuraciones → Notificaciones → Pantalla Bloqueo → activar.
+NU PLUS NO DISPONIBLE: En expansión progresiva. Mencionar beneficios Mastercard.
+NU PLUS NO CUMPLIÓ META: $900.000 entre 1-27 de cada mes. Explicar consumo vs meta. Citar T&C Nu Plus.
+NU PLUS REFERIDOS: Solo 1 vez por usuario. No acumulable con meta de gasto.
+COMPRAS INTERNACIONALES: <$60k→1 cuota, ≥$60k→24 cuotas. Mastercard 0.45%. TRM 3:05PM EST. Citar TC pág 13.
+PAGARE: Firmado digitalmente en app. Soporte por administrador@pagares.bvc.com.co.
+TEMA NUEVO: Redactar desde cero con misma estructura y tono. Citar contrato si aplica.`;
+</script>
+</body>
+</html>

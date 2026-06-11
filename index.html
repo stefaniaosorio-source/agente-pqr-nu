@@ -203,9 +203,6 @@ var APPS_SCRIPT_URL = 'https://script.google.com/a/macros/nubank.com.br/s/AKfycb
 
 var tipo = 'peticion';
 var replicaTipo = 'peticion';
-document.getElementById('fecha_resp').valueAsDate = new Date();
-// Agregar primera fecha de réplica al cargar
-agregarFecha();
 
 function activar() {
   var t = document.getElementById('tkInput').value.trim();
@@ -219,6 +216,10 @@ function cambiarToken() {
   document.getElementById('overlay').style.display = 'flex';
 }
 window.addEventListener('load', function() {
+  // Inicializar fecha y primera fecha de réplica
+  document.getElementById('fecha_resp').valueAsDate = new Date();
+  agregarFecha();
+  // Token
   if (sessionStorage.getItem('gh_tk')) document.getElementById('overlay').style.display = 'none';
   document.getElementById('tkInput').addEventListener('keydown', function(e){ if(e.key==='Enter') activar(); });
 });

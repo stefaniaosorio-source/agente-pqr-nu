@@ -91,28 +91,78 @@ textarea { resize: vertical; line-height: 1.5; }
 <div class="left">
   <div>
     <div class="sec">Tipo de PQR</div>
-    <div class="tipo-g">
-      <div class="tipo-b on" id="bp" onclick="setTipo('peticion')"><span>📋</span>Derecho de Petición</div>
+    <div class="tipo-g" style="grid-template-columns:1fr 1fr 1fr">
+      <div class="tipo-b on" id="bp" onclick="setTipo('peticion')"><span>📋</span>Petición</div>
       <div class="tipo-b" id="bq" onclick="setTipo('queja')"><span>⚠️</span>Queja</div>
+      <div class="tipo-b" id="br" onclick="setTipo('replica')"><span>🔄</span>Réplica</div>
     </div>
   </div>
+
+  <!-- Campos específicos de Réplica -->
+  <div id="replica-fields" style="display:none;background:#fdf4ff;border:1.5px solid var(--border);border-radius:9px;padding:12px">
+    <div class="sec" style="margin-bottom:8px">Réplica de:</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <div class="tipo-b on" id="rp" onclick="setReplicaTipo('peticion')" style="font-size:11px;padding:7px 4px"><span style="font-size:16px">📋</span>Petición</div>
+      <div class="tipo-b" id="rq" onclick="setReplicaTipo('queja')" style="font-size:11px;padding:7px 4px"><span style="font-size:16px">⚠️</span>Queja</div>
+    </div>
+    <div class="sec" style="margin-bottom:6px">Fechas de las réplicas</div>
+    <div id="fechas-replica"></div>
+    <button onclick="agregarFecha()" style="margin-top:6px;padding:6px 12px;border:1.5px dashed var(--nu-mid);border-radius:7px;background:transparent;color:var(--nu);font-size:12px;font-weight:600;cursor:pointer;width:100%">+ Agregar fecha</button>
+  </div>
+
   <div class="div"></div>
   <div>
     <div class="sec">Datos del cliente</div>
     <div class="fg"><label>Nombre completo</label><input id="nombre" type="text" placeholder="Ej: María González Rodríguez"></div>
-    <div class="fg"><label>Fecha de la solicitud</label><input id="fecha_sol" type="date"></div>
+    <div class="fg" id="fecha-sol-wrap"><label>Fecha de la solicitud</label><input id="fecha_sol" type="date"></div>
     <div class="fg"><label>Radicado (opcional)</label><input id="radicado" type="text" placeholder="Ej: 3199000"></div>
     <div class="fg"><label>Fecha de respuesta</label><input id="fecha_resp" type="date"></div>
   </div>
   <div class="div"></div>
   <div>
-    <div class="sec">Contexto de la PQR</div>
+    <div class="sec">Escenario</div>
     <div class="fg">
-      <label>Describe qué solicita o reclama el cliente</label>
-      <textarea id="contexto" rows="8" placeholder="Ej: El cliente solicita aumento de cupo de su tarjeta. Actualmente tiene $2.000.000.
+      <label>Selecciona un escenario predefinido (opcional)</label>
+      <select id="escenario" onchange="onEscenarioChange()">
+        <option value="">— Sin escenario (descripción libre) —</option>
+        <optgroup label="🚫 Cancelación">
+          <option value="cancel_no_iniciada">Cancelación no iniciada</option>
+          <option value="cancel_en_curso">Solicitud de cancelación en curso</option>
+          <option value="cancel_confirmada">Cancelación confirmada (Paz y Salvo)</option>
+          <option value="cancel_deuda_tc">Cancelación con deuda en Tarjeta de Crédito</option>
+          <option value="cancel_deuda_tac">Cancelación con deuda en Tarjeta Abre Camino</option>
+          <option value="cancel_saldo_ca">Cancelación con saldo en Cuenta de Ahorros</option>
+        </optgroup>
+        <optgroup label="💳 Cupo">
+          <option value="cupo_aumento">Aumento de cupo</option>
+          <option value="cupo_reduccion">Reducción / Ajuste de límite</option>
+        </optgroup>
+        <optgroup label="🕊️ Defunciones">
+          <option value="defuncion_era_cliente">Fallecimiento — Era cliente Nu (producto activo)</option>
+          <option value="defuncion_no_cliente">Fallecimiento — No era cliente Nu</option>
+        </optgroup>
+      </select>
+    </div>
+
+    <!-- Descripción del escenario seleccionado -->
+    <div id="escenario-desc" style="display:none;background:#fdf4ff;border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;color:#6b21a8;margin-bottom:8px;line-height:1.5"></div>
+  </div>
+
+  <div class="div"></div>
+  <div>
+    <div class="sec" id="contexto-label">Contexto de la PQR</div>
+    <div class="fg">
+      <label id="contexto-sublabel">Describe qué solicita o reclama el cliente</label>
+      <textarea id="contexto" rows="5" placeholder="Ej: El cliente solicita aumento de cupo de su tarjeta. Actualmente tiene $2.000.000.
 
 Para temas nuevos:
 El cliente no puede descargar su certificado desde la app, lleva 3 días intentando."></textarea>
+    </div>
+
+    <!-- Detalles adicionales (solo cuando hay escenario seleccionado) -->
+    <div id="detalles-wrap" style="display:none" class="fg">
+      <label>Detalles adicionales (opcional)</label>
+      <textarea id="detalles" rows="3" placeholder="Agrega datos específicos del caso: montos, fechas, correos, nombres de herederos, etc. La IA los incorporará al texto sin cambiar la estructura del template."></textarea>
     </div>
   </div>
   <button class="btn-gen" id="btnGen" onclick="generar()">✨ Generar carta con IA</button>
@@ -124,6 +174,7 @@ El cliente no puede descargar su certificado desde la app, lleva 3 días intenta
     <div class="cl-links">
       <a class="cl" href="https://contracts.nu.com.co/credit-card/contrato-version-3.pdf" target="_blank">📄 Contrato Tarjeta de Crédito</a>
       <a class="cl" href="https://contracts.nu.com.co/savings-account/contrato-version-3.pdf" target="_blank">📄 Contrato Cuenta Ahorros / Débito</a>
+      <a class="cl" href="https://contracts.nu.com.co/secured-card/contrato-version-2.pdf" target="_blank">📄 Contrato Tarjeta Abre Camino</a>
       <a class="cl" href="https://cdn.nubank.com.br/colombia/terminos-y-condiciones-nu-plus.pdf" target="_blank">📄 Términos Nu Plus</a>
     </div>
   </div>
@@ -148,10 +199,13 @@ El cliente no puede descargar su certificado desde la app, lleva 3 días intenta
 
 <script>
 // ⚠️ REEMPLAZA con la URL de tu Apps Script desplegado
-var APPS_SCRIPT_URL = 'https://script.google.com/a/macros/nubank.com.br/s/AKfycbwU4RlG8rzY_jIn-hx2bDlGBIzy0ZwO4xlIPheK5oTCIFTDUWpD_2I0TY3MW66k8wY/exec';
+var APPS_SCRIPT_URL = 'https://script.google.com/a/macros/nubank.com.br/s/AKfycbwPJOSB2mxPAUFE56MbW7pIG692ltbE1zRWKg53CDzJbp54FoTfxVx-i7NRDcf8RFM/exec';
 
 var tipo = 'peticion';
+var replicaTipo = 'peticion';
 document.getElementById('fecha_resp').valueAsDate = new Date();
+// Agregar primera fecha de réplica al cargar
+agregarFecha();
 
 function activar() {
   var t = document.getElementById('tkInput').value.trim();
@@ -172,6 +226,69 @@ function setTipo(t) {
   tipo = t;
   document.getElementById('bp').classList.toggle('on', t==='peticion');
   document.getElementById('bq').classList.toggle('on', t==='queja');
+  document.getElementById('br').classList.toggle('on', t==='replica');
+  document.getElementById('replica-fields').style.display = t==='replica' ? 'block' : 'none';
+  document.getElementById('fecha-sol-wrap').style.display = t==='replica' ? 'none' : 'flex';
+}
+var ESCENARIOS = {
+  'cancel_no_iniciada':   { desc: '📋 Template: Cancelación no iniciada. La IA usará el texto estándar del proceso de cancelación en 3 pasos y canales seguros.', libre: false },
+  'cancel_en_curso':      { desc: '📋 Template: Solicitud en curso. La IA confirmará que la solicitud fue recibida y está en proceso.', libre: false },
+  'cancel_confirmada':    { desc: '📋 Template: Paz y Salvo enviado. Agrega en "Detalles" el correo del cliente y la fecha en que se envió la confirmación.', libre: false },
+  'cancel_deuda_tc':      { desc: '📋 Template: Cancelación con deuda TC. Agrega en "Detalles" el monto de la deuda pendiente.', libre: false },
+  'cancel_deuda_tac':     { desc: '📋 Template: Cancelación con deuda Tarjeta Abre Camino. Agrega en "Detalles" el monto de la deuda pendiente.', libre: false },
+  'cancel_saldo_ca':      { desc: '📋 Template: Saldo en Cuenta de Ahorros. Agrega en "Detalles" el monto del saldo a favor.', libre: false },
+  'cupo_aumento':         { desc: '📋 Template: Aumento de cupo. La IA explicará que los aumentos son automáticos y citará el contrato.', libre: false },
+  'cupo_reduccion':       { desc: '📋 Template: Reducción de límite. La IA explicará los pasos en la app para ajustar el límite.', libre: false },
+  'defuncion_era_cliente':{ desc: '📋 Template: Fallecimiento — cliente activo. Agrega en "Detalles": nombre del fallecido, producto(s) que tenía, nombre del reclamante y parentesco.', libre: false },
+  'defuncion_no_cliente': { desc: '📋 Template: Fallecimiento — no era cliente. La IA confirmará que la persona no tiene productos activos con Nu.', libre: false }
+};
+
+function onEscenarioChange() {
+  var esc = document.getElementById('escenario').value;
+  var desc = document.getElementById('escenario-desc');
+  var detalles = document.getElementById('detalles-wrap');
+  var ctxLabel = document.getElementById('contexto-label');
+  var ctxSub = document.getElementById('contexto-sublabel');
+  var ctx = document.getElementById('contexto');
+  if (esc && ESCENARIOS[esc]) {
+    desc.textContent = ESCENARIOS[esc].desc;
+    desc.style.display = 'block';
+    detalles.style.display = 'flex';
+    ctxLabel.textContent = 'Contexto adicional libre (opcional)';
+    ctxSub.textContent = 'Agrega contexto si necesitas complementar el escenario';
+    ctx.placeholder = 'Opcional: describe algo más sobre este caso específico...';
+    ctx.rows = 3;
+  } else {
+    desc.style.display = 'none';
+    detalles.style.display = 'none';
+    ctxLabel.textContent = 'Contexto de la PQR';
+    ctxSub.textContent = 'Describe qué solicita o reclama el cliente';
+    ctx.placeholder = 'Ej: El cliente solicita aumento de cupo de su tarjeta...';
+    ctx.rows = 5;
+  }
+}
+
+function setReplicaTipo(t) {
+  replicaTipo = t;
+  document.getElementById('rp').classList.toggle('on', t==='peticion');
+  document.getElementById('rq').classList.toggle('on', t==='queja');
+}
+function agregarFecha() {
+  var cont = document.getElementById('fechas-replica');
+  var idx = cont.children.length + 1;
+  var div = document.createElement('div');
+  div.style.cssText = 'display:flex;gap:6px;align-items:center;margin-bottom:6px';
+  div.innerHTML = '<input type="date" class="fecha-replica" style="flex:1;border:1.5px solid var(--border);border-radius:7px;padding:7px 10px;font-size:13px;font-family:inherit;outline:none">' +
+    (idx > 1 ? '<button onclick="this.parentElement.remove()" style="padding:6px 10px;border:1.5px solid #fecaca;border-radius:7px;background:#fef2f2;color:#dc2626;cursor:pointer;font-size:13px">✕</button>' : '');
+  cont.appendChild(div);
+}
+function getFechasReplica() {
+  var inputs = document.querySelectorAll('.fecha-replica');
+  var fechas = [];
+  inputs.forEach(function(i){ if(i.value) fechas.push(fC(i.value)); });
+  if (fechas.length === 0) return 'DD/MM/AAAA';
+  if (fechas.length === 1) return fechas[0];
+  return fechas.slice(0, -1).join(', ') + ' y ' + fechas[fechas.length - 1];
 }
 var MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 function fL(v){ if(!v) return 'xx de xxx del 2026'; var p=v.split('-'); return parseInt(p[2])+' de '+MESES[parseInt(p[1])-1]+' del '+p[0]; }
@@ -180,19 +297,27 @@ function fC(v){ if(!v) return 'DD/MM/AAAA'; var p=v.split('-'); return p[2]+'/'+
 async function generar() {
   var token = sessionStorage.getItem('gh_tk');
   if (!token) { document.getElementById('overlay').style.display='flex'; return; }
-  var contexto = document.getElementById('contexto').value.trim();
-  if (!contexto) { showErr('Describe el contexto de la PQR.'); return; }
+  var escenario = document.getElementById('escenario').value;
+  var contexto  = document.getElementById('contexto').value.trim();
+  var detalles  = document.getElementById('detalles').value.trim();
+  if (!escenario && !contexto) { showErr('Selecciona un escenario o describe el contexto.'); return; }
   hideErr();
   document.getElementById('btnGen').disabled = true;
   document.getElementById('spinner').classList.add('show');
   document.getElementById('carta').innerHTML = '<div class="ph"><span class="big" style="font-size:28px">⏳</span>Generando con IA...</div>';
+  var esReplica = tipo === 'replica';
+  var tipoTexto = esReplica ? ('Réplica a ' + (replicaTipo==='peticion'?'Derecho de Petición':'Queja')) : (tipo==='peticion'?'Derecho de Petición':'Queja');
   var userMsg =
-    'Tipo: '+(tipo==='peticion'?'Derecho de Petición':'Queja')+'\n'+
+    'Tipo: ' + tipoTexto + '\n'+
+    (esReplica ? 'IMPORTANTE: Es una réplica. El párrafo de apertura debe decir: "En atención a tus réplicas presentadas el pasado ' + getFechasReplica() + ', dentro del término legal establecido en la Ley 1755 de 2015, damos respuesta en los siguientes términos:"\n' : '') +
     'Nombre del cliente: '+(document.getElementById('nombre').value.trim()||'xxxx')+'\n'+
-    'Fecha solicitud: '+fC(document.getElementById('fecha_sol').value)+'\n'+
+    (!esReplica ? 'Fecha solicitud: '+fC(document.getElementById('fecha_sol').value)+'\n' : 'Fechas de las réplicas: '+getFechasReplica()+'\n')+
     'Fecha de respuesta: '+fL(document.getElementById('fecha_resp').value)+'\n'+
     (document.getElementById('radicado').value?'Radicado: '+document.getElementById('radicado').value+'\n':'')+
-    'Contexto: '+contexto+'\n\nGenera la carta completa lista para enviar. Solo el texto de la carta, sin explicaciones.';
+    (escenario ? 'ESCENARIO PREDEFINIDO: ' + escenario + '\nINSTRUCCIÓN: Usa el template establecido para este escenario EXACTAMENTE. No cambies la estructura ni el mensaje principal. Si hay detalles adicionales, incorpóralos de forma natural y coherente dentro del template.\n' : '') +
+    (contexto ? 'Contexto: ' + contexto + '\n' : '') +
+    (detalles ? 'Detalles adicionales a incorporar: ' + detalles + '\n' : '') +
+    '\nGenera la carta completa lista para enviar. Solo el texto de la carta, sin explicaciones.';
   try {
     var r = await fetch('https://models.inference.ai.azure.com/chat/completions',{
       method:'POST',
@@ -215,7 +340,17 @@ function copiar(){
 function limpiar(){
   ['nombre','fecha_sol','radicado','contexto'].forEach(function(id){document.getElementById(id).value='';});
   document.getElementById('fecha_resp').valueAsDate=new Date();
-  tipo='peticion';document.getElementById('bp').classList.add('on');document.getElementById('bq').classList.remove('on');
+  tipo='peticion'; replicaTipo='peticion';
+  document.getElementById('bp').classList.add('on');
+  document.getElementById('bq').classList.remove('on');
+  document.getElementById('br').classList.remove('on');
+  document.getElementById('replica-fields').style.display='none';
+  document.getElementById('fecha-sol-wrap').style.display='flex';
+  document.getElementById('fechas-replica').innerHTML='';
+  agregarFecha();
+  document.getElementById('escenario').value = '';
+  document.getElementById('detalles').value = '';
+  onEscenarioChange();
   document.getElementById('carta').innerHTML='<div class="ph"><span class="big">✨</span>Describe el contexto de la PQR<br>y haz clic en "Generar carta con IA".</div>';
   hideErr();
 }
@@ -272,30 +407,52 @@ Atentamente,
 
 Equipo Nu
 
+## FORMATO VISUAL — OBLIGATORIO
+Usa estos marcadores de formato para mejorar la presentación del documento:
+
+- **Para resaltar términos clave, montos, fechas importantes, nombres de secciones del contrato:** escríbelos entre dobles asteriscos: \`**término importante**\`. Ejemplos: **$0**, **página 23**, **"Cancelación de tu Cupo de Crédito"**, **01 800 917 2000**.
+- **Para pasos o instrucciones numeradas:** usa `1. texto`, `2. texto`, etc. en líneas separadas.
+- **Para listas de ítems:** usa `- ítem` en líneas separadas.
+- **Evita líneas en blanco dobles:** usa solo una línea en blanco entre párrafos.
+- El sistema convertirá **texto** a negrita + subrayado automáticamente en el documento de Drive.
+
 ## NUNCA
 Admitir culpa, revelar info interna, comprometer fechas no autorizadas, prometer devoluciones, mencionar empleados, contradecir contratos, usar lenguaje informal.
 
 ## CÓMO CITAR CONTRATOS — OBLIGATORIO Y EXACTO
 Cuando el caso lo requiera, cita SIEMPRE con este formato exacto:
-"Lo anterior se encuentra estipulado en el [nombre del contrato] (disponible en: [LINK COMPLETO]), específicamente en [sección/página], donde se establece que: '[cita textual]'."
+"Lo anterior se encuentra estipulado en el [nombre del contrato] (disponible en: [LINK CON #page=N]), específicamente en [sección/página], donde se establece que: '[cita textual]'."
 
-NUNCA cites un contrato sin incluir el link completo. NUNCA inventes citas. Usa solo las citas que aparecen a continuación.
+REGLA CRÍTICA: SIEMPRE incluye el link con #page=N al final para que el lector llegue directamente a la página citada. Ejemplo: https://contracts.nu.com.co/credit-card/contrato-version-3.pdf#page=2
+NUNCA uses el link sin #page=N si conoces la página. NUNCA inventes citas.
 
-## CONTRATOS Y CITAS EXACTAS
+## CONTRATOS, PÁGINAS Y CITAS EXACTAS
 
-TARJETA DE CRÉDITO (TC): https://contracts.nu.com.co/credit-card/contrato-version-3.pdf
-- Aumento de cupo → Página 2, "Aumento de tu Cupo de Crédito":
+TARJETA DE CRÉDITO (TC):
+- Aumento de cupo → https://contracts.nu.com.co/credit-card/contrato-version-3.pdf#page=2
+  Sección: "Aumento de tu Cupo de Crédito"
   CITA EXACTA: "El aumento de tu Cupo de Crédito solo podrá ser realizado por Nu, de acuerdo con sus políticas internas y previa autorización tuya."
-- Cancelación con deuda → Página 23, "Cancelación de tu Cupo de Crédito y Tarjeta de Crédito Nu":
-  CITA EXACTA: "El contrato se dará por terminado de forma definitiva una vez hayas pagado todo lo que debes."
-- Compras internacionales → Página 13, "Uso de la Tarjeta de Crédito Nu en el Exterior"
-- Reducción de cupo → "Aumento de tu Cupo de Crédito" páginas 2-3:
+- Reducción de cupo → https://contracts.nu.com.co/credit-card/contrato-version-3.pdf#page=2
+  Sección: "Aumento de tu Cupo de Crédito" (págs 2-3)
   CITA EXACTA: "Nu revisará periódicamente tu comportamiento crediticio y podrá ajustar tu Cupo de Crédito según sus políticas internas y la información disponible en centrales de riesgo."
+- Cancelación con deuda → https://contracts.nu.com.co/credit-card/contrato-version-3.pdf#page=23
+  Sección: "Cancelación de tu Cupo de Crédito y Tarjeta de Crédito Nu"
+  CITA EXACTA: "El contrato se dará por terminado de forma definitiva una vez hayas pagado todo lo que debes."
+- Compras internacionales → https://contracts.nu.com.co/credit-card/contrato-version-3.pdf#page=13
+  Sección: "Uso de la Tarjeta de Crédito Nu en el Exterior"
 
-CUENTA DE AHORROS (CA): https://contracts.nu.com.co/savings-account/contrato-version-3.pdf
-- Cancelación con saldo → Apartado "17. Vigencia y terminación":
+CUENTA DE AHORROS (CA):
+- Cancelación con saldo → https://contracts.nu.com.co/savings-account/contrato-version-3.pdf#page=15
+  Sección: "17. Vigencia y terminación"
   CITA EXACTA: "Puedes cancelarla en cualquier momento a través de la Aplicación Nu, retirando o transfiriendo la totalidad del saldo."
-- Seguros → Capítulo IX, numeral 9.2.2
+- Seguros FOGAFIN → https://contracts.nu.com.co/savings-account/contrato-version-3.pdf#page=11
+  Sección: Capítulo IX, numeral 9.2.2
+
+TARJETA ABRE CAMINO (TAC):
+- Link base: https://contracts.nu.com.co/secured-card/contrato-version-2.pdf
+- Citar SIEMPRE cuando el cliente mencione "Abre Camino" o "tarjeta garantizada".
+- Esta tarjeta funciona con depósito de seguridad. Condiciones distintas a la TC regular.
+- Usar #page=N si conoces la página específica del apartado relevante.
 
 T&C NU PLUS: https://cdn.nubank.com.br/colombia/terminos-y-condiciones-nu-plus.pdf
 - Meta de gasto → Párrafo 4
@@ -303,9 +460,25 @@ T&C NU PLUS: https://cdn.nubank.com.br/colombia/terminos-y-condiciones-nu-plus.p
 FOGAFIN: https://www.fogafin.gov.co/
 MASTERCARD: https://www.mastercard.com.co/es-co/consumidores/conozca-nuestras-ofertas-y-promociones.html
 
+## CALIDAD Y PROFUNDIDAD DE LA RESPUESTA — MUY IMPORTANTE
+
+NUNCA generes respuestas cortas o superficiales. Cada carta debe:
+
+1. **Abrir con empatía genuina** — reconoce el punto del cliente antes de responder, muestra que entendiste su situación específica.
+2. **Desarrollar la respuesta completamente** — no te limites a copiar el template mínimo. Amplía con contexto, explicaciones claras y detalles relevantes del caso.
+3. **Incluir SIEMPRE** (cuando aplique):
+   - La cita contractual completa con link directo a la página
+   - El razonamiento detrás de la política o decisión
+   - Los pasos de acción claros para el cliente si debe hacer algo
+   - Un cierre empático que invite al cliente a seguir en contacto
+4. **Adaptar el tono al caso** — si es una queja, ser más empático y comprensivo; si es una petición informativa, ser claro y didáctico.
+5. **Longitud mínima de la carta:** 4 párrafos sustanciales. Nunca menos.
+6. **Si el cliente mencionó detalles específicos** (fechas, montos, situaciones), mencionarlos en la respuesta para demostrar que sí se leyó su caso.
+7. **Evita frases genéricas vacías** — cada oración debe agregar valor al cliente.
+
 ## TEMPLATES COMPLETOS POR TEMA
 
-Usa el texto EXACTO de estos templates. Solo personaliza los datos del cliente.
+Usa estos templates como BASE, pero expándelos con el contexto específico del caso. No los copies mecánicamente — adáptalos al cliente.
 
 --- CUPO: AUMENTO ---
 En primer lugar, entendemos tu preocupación respecto al límite otorgado en tu tarjeta de crédito Nu y agradecemos que nos lo hayas comunicado. Sabemos lo importante que es para ti mantener el control con tus finanzas; sin embargo, queremos contarte que el aumento de tu límite se realiza de acuerdo a un estudio automático que hace periódicamente en nuestro sistema, en el cual se tienen en cuenta factores como tu buen comportamiento con la tarjeta de crédito Nu, con otras entidades y otros productos financieros que manejes.
@@ -427,6 +600,26 @@ Lo anterior está estipulado en el Contrato de Tarjeta de Crédito (https://cont
 
 --- PAGARÉ / FIRMA DIGITAL ---
 La suscripción del pagaré es un requisito estándar para el funcionamiento de tu producto de crédito. El proceso de firma digital fue notificado a través de la app y el soporte fue enviado por administrador@pagares.bvc.com.co. La firma es completamente trazable en nuestros sistemas con fecha y hora exacta.
+
+--- DEFUNCIÓN: ERA CLIENTE ---
+(Escenario: defuncion_era_cliente. Necesitas: nombre del fallecido, producto(s) activo(s), nombre del reclamante y parentesco)
+Recibe nuestras más sinceras condolencias por el fallecimiento de [nombre del fallecido]. En Nu Financiera entendemos la dificultad de estos momentos y queremos acompañarte en el proceso de manera cercana y diligente.
+
+Con respecto a los productos que [nombre del fallecido] tenía activos con nosotros, queremos informarte que para gestionar la cancelación y/o sucesión de dichos productos, el representante legal o heredero debe comunicarse con nosotros a través de los siguientes canales para iniciar el proceso correspondiente:
+- Chat de la App Nu
+- Línea telefónica: 01 800 917 2000 (desde Colombia) o 601 357 11 02 (Bogotá)
+
+Para adelantar el proceso se requerirá la documentación legal correspondiente (registro de defunción y documentos que acrediten la calidad de heredero o representante).
+
+Quedamos atentos y a tu disposición para acompañarte en este proceso.
+
+--- DEFUNCIÓN: NO ERA CLIENTE ---
+(Escenario: defuncion_no_cliente)
+Recibe nuestras más sinceras condolencias por el fallecimiento de tu ser querido. En Nu Financiera entendemos la dificultad de estos momentos.
+
+Luego de realizar la validación en nuestros sistemas, queremos informarte que [nombre del fallecido] no registra ningún producto activo ni obligación financiera con Nu Financiera. Por lo tanto, no existe ningún proceso pendiente con nuestra entidad relacionado con esta persona.
+
+Si tienes alguna otra inquietud o necesitas un certificado de no deuda, puedes comunicarte con nosotros a través del chat de la App Nu o a nuestra línea 01 800 917 2000.
 
 --- TEMA NUEVO ---
 Si el contexto no coincide con ningún template anterior, redacta desde cero manteniendo EXACTAMENTE la misma estructura, tono y formato. Responde el punto central del cliente con empatía y claridad. Si el caso tiene relación con algún contrato, cítalo con el link completo y la sección exacta.`;

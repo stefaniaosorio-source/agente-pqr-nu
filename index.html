@@ -165,6 +165,17 @@ El cliente no puede descargar su certificado desde la app, lleva 3 días intenta
       <textarea id="detalles" rows="3" placeholder="Agrega datos específicos del caso: montos, fechas, correos, nombres de herederos, etc. La IA los incorporará al texto sin cambiar la estructura del template."></textarea>
     </div>
   </div>
+  <!-- Adjuntar imágenes -->
+  <div class="div"></div>
+  <div>
+    <div class="sec">Imágenes adjuntas (opcional)</div>
+    <input type="file" id="imgInput" multiple accept="image/*" style="display:none" onchange="onImgsSelected()">
+    <button onclick="document.getElementById('imgInput').click()" style="width:100%;padding:9px;border:1.5px dashed var(--nu-mid);border-radius:8px;background:var(--nu-light);color:var(--nu);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">
+      📎 Agregar imágenes al documento
+    </button>
+    <div id="img-preview" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px"></div>
+  </div>
+
   <button class="btn-gen" id="btnGen" onclick="generar()">✨ Generar carta con IA</button>
   <div class="spin-wrap" id="spinner"><div class="spin"></div><span>La IA está redactando la carta...</span></div>
   <div class="err" id="err"></div>
@@ -199,7 +210,7 @@ El cliente no puede descargar su certificado desde la app, lleva 3 días intenta
 
 <script>
 // ⚠️ REEMPLAZA con la URL de tu Apps Script desplegado
-var APPS_SCRIPT_URL = 'https://script.google.com/a/macros/nubank.com.br/s/AKfycbwPJOSB2mxPAUFE56MbW7pIG692ltbE1zRWKg53CDzJbp54FoTfxVx-i7NRDcf8RFM/exec';
+var APPS_SCRIPT_URL = 'https://script.google.com/a/macros/nubank.com.br/s/AKfycbzo5PeGjvn_zPmknw4A4Vz2BTmqRknPAYCevvXlYyuURDGBJAouw3Q6s-PAsGXkKaM/exec';
 
 var tipo = 'peticion';
 var replicaTipo = 'peticion';
@@ -351,25 +362,61 @@ function limpiar(){
   agregarFecha();
   document.getElementById('escenario').value = '';
   document.getElementById('detalles').value = '';
+  imagenesAdjuntas = [];
+  document.getElementById('img-preview').innerHTML = '';
   onEscenarioChange();
   document.getElementById('carta').innerHTML='<div class="ph"><span class="big">✨</span>Describe el contexto de la PQR<br>y haz clic en "Generar carta con IA".</div>';
   hideErr();
 }
+// ── MANEJO DE IMÁGENES ──────────────────────────────────
+var imagenesAdjuntas = []; // [{name, base64, mime}]
+
+function onImgsSelected() {
+  var files = document.getElementById('imgInput').files;
+  var preview = document.getElementById('img-preview');
+  Array.from(files).forEach(function(file) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var b64 = e.target.result; // data:image/...;base64,...
+      imagenesAdjuntas.push({ name: file.name, base64: b64, mime: file.type });
+      // Mostrar miniatura
+      var wrap = document.createElement('div');
+      wrap.style.cssText = 'position:relative;display:inline-block';
+      var img = document.createElement('img');
+      img.src = b64;
+      img.style.cssText = 'width:72px;height:72px;object-fit:cover;border-radius:6px;border:1.5px solid var(--border)';
+      var btn = document.createElement('button');
+      btn.textContent = '✕';
+      btn.style.cssText = 'position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;border:none;background:#dc2626;color:white;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0';
+      var idx = imagenesAdjuntas.length - 1;
+      btn.onclick = function() { imagenesAdjuntas.splice(idx, 1); wrap.remove(); };
+      wrap.appendChild(img); wrap.appendChild(btn);
+      preview.appendChild(wrap);
+    };
+    reader.readAsDataURL(file);
+  });
+  document.getElementById('imgInput').value = '';
+}
+
 function guardarDrive() {
   var carta = document.getElementById('carta').innerText;
   if (carta.includes('Describe el contexto')) { showToast('⚠️ Genera la carta primero'); return; }
   var nombre = document.getElementById('nombre').value.trim() || 'Cliente';
-  // Usar formulario POST para evitar límite de URL
   var form = document.createElement('form');
   form.method = 'POST';
   form.action = APPS_SCRIPT_URL;
   form.target = '_blank';
-  var fNombre = document.createElement('input');
-  fNombre.type = 'hidden'; fNombre.name = 'nombre'; fNombre.value = nombre;
-  var fContent = document.createElement('input');
-  fContent.type = 'hidden'; fContent.name = 'content'; fContent.value = carta;
-  form.appendChild(fNombre);
-  form.appendChild(fContent);
+  var addField = function(n, v) {
+    var i = document.createElement('input');
+    i.type = 'hidden'; i.name = n; i.value = v;
+    form.appendChild(i);
+  };
+  addField('nombre', nombre);
+  addField('content', carta);
+  // Agregar imágenes como JSON
+  if (imagenesAdjuntas.length > 0) {
+    addField('images', JSON.stringify(imagenesAdjuntas));
+  }
   document.body.appendChild(form);
   form.submit();
   document.body.removeChild(form);
@@ -408,24 +455,31 @@ Atentamente,
 
 Equipo Nu
 
-## FORMATO VISUAL — OBLIGATORIO
-Usa estos marcadores de formato para mejorar la presentación del documento:
+## FORMATO VISUAL
+Usa estos marcadores con MUCHA moderación:
 
-- Para resaltar términos clave, montos, fechas importantes, nombres de secciones del contrato: escríbelos entre dobles asteriscos **asi**. Ejemplos: **$0**, **página 23**, **"Cancelación de tu Cupo de Crédito"**, **01 800 917 2000**.
-- Para pasos o instrucciones numeradas: usa 1. texto, 2. texto, etc. en líneas separadas.
-- Para listas de ítems: usa - ítem en líneas separadas.
-- Evita líneas en blanco dobles: usa solo una línea en blanco entre párrafos.
-- El sistema convertirá **texto** a negrita + subrayado automáticamente en el documento de Drive.
+- Los dobles asteriscos **texto** hacen negrita + subrayado. Úsalos ÚNICAMENTE en: montos de dinero ($100.000), números de teléfono (01 800 917 2000), y el nombre EXACTO de la cláusula o sección del contrato cuando se cita. MÁXIMO 3 palabras o frases por carta. NO los uses en oraciones completas ni en frases largas.
+- Para pasos numerados: usa 1. texto, 2. texto en líneas separadas.
+- Para listas: usa - ítem en líneas separadas.
+- Una sola línea en blanco entre párrafos.
 
 ## NUNCA
 Admitir culpa, revelar info interna, comprometer fechas no autorizadas, prometer devoluciones, mencionar empleados, contradecir contratos, usar lenguaje informal.
 
-## CÓMO CITAR CONTRATOS — OBLIGATORIO Y EXACTO
-Cuando el caso lo requiera, cita SIEMPRE con este formato exacto:
-"Lo anterior se encuentra estipulado en el [nombre del contrato] (disponible en: [LINK CON #page=N]), específicamente en [sección/página], donde se establece que: '[cita textual]'."
+## CÓMO CITAR CONTRATOS — OBLIGATORIO, EXACTO Y COMPLETO
 
-REGLA CRÍTICA: SIEMPRE incluye el link con #page=N al final para que el lector llegue directamente a la página citada. Ejemplo: https://contracts.nu.com.co/credit-card/contrato-version-3.pdf#page=2
-NUNCA uses el link sin #page=N si conoces la página. NUNCA inventes citas.
+REGLAS ABSOLUTAS AL CITAR UN CONTRATO:
+1. SIEMPRE menciona el nombre del apartado o sección exacta (entre comillas).
+2. SIEMPRE incluye el número de página.
+3. SIEMPRE usa el link con #page=N.
+4. SIEMPRE incluye la cita textual del contrato (entre comillas).
+5. NUNCA digas solo "donde se establece que..." sin el nombre del apartado y la página.
+
+FORMATO OBLIGATORIO — cópialo exactamente así:
+"Lo anterior se encuentra estipulado en el **[nombre del contrato]** (disponible en: [LINK#page=N]), específicamente en la página [N], en el apartado **"[Nombre exacto del apartado]"**, donde se establece expresamente que: '[CITA TEXTUAL DEL CONTRATO]'."
+
+EJEMPLO CORRECTO:
+"Lo anterior se encuentra estipulado en el Contrato de Tarjeta de Crédito (disponible en: https://contracts.nu.com.co/credit-card/contrato-version-3.pdf#page=2), específicamente en la página 2, en el apartado "Aumento de tu Cupo de Crédito", donde se establece expresamente que: 'El aumento de tu Cupo de Crédito solo podrá ser realizado por Nu, de acuerdo con sus políticas internas y previa autorización tuya.'"
 
 ## CONTRATOS, PÁGINAS Y CITAS EXACTAS
 

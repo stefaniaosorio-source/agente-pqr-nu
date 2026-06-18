@@ -176,6 +176,7 @@ El cliente no puede descargar su certificado desde la app, lleva 3 días intenta
     <div id="img-preview" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px"></div>
   </div>
 
+
   <button class="btn-gen" id="btnGen" onclick="generar()">✨ Generar carta con IA</button>
   <div class="spin-wrap" id="spinner"><div class="spin"></div><span>La IA está redactando la carta...</span></div>
   <div class="err" id="err"></div>
@@ -210,7 +211,7 @@ El cliente no puede descargar su certificado desde la app, lleva 3 días intenta
 
 <script>
 // ⚠️ REEMPLAZA con la URL de tu Apps Script desplegado
-var APPS_SCRIPT_URL = 'https://script.google.com/a/macros/nubank.com.br/s/AKfycbzo5PeGjvn_zPmknw4A4Vz2BTmqRknPAYCevvXlYyuURDGBJAouw3Q6s-PAsGXkKaM/exec';
+var APPS_SCRIPT_URL = 'https://script.google.com/a/macros/nubank.com.br/s/AKfycbyC7gx1xrX59oK6byeNAZTZHBo9DYVaNdP0XLoJ42tJaL4CNbVqgBRyGY8S0bUT/exec';
 
 var tipo = 'peticion';
 var replicaTipo = 'peticion';
@@ -326,9 +327,9 @@ async function generar() {
     (!esReplica ? 'Fecha solicitud: '+fC(document.getElementById('fecha_sol').value)+'\n' : 'Fechas de las réplicas: '+getFechasReplica()+'\n')+
     'Fecha de respuesta: '+fL(document.getElementById('fecha_resp').value)+'\n'+
     (document.getElementById('radicado').value?'Radicado: '+document.getElementById('radicado').value+'\n':'')+
-    (escenario ? 'ESCENARIO PREDEFINIDO: ' + escenario + '\nINSTRUCCIÓN: Usa el template establecido para este escenario EXACTAMENTE. No cambies la estructura ni el mensaje principal. Si hay detalles adicionales, incorpóralos de forma natural y coherente dentro del template.\n' : '') +
+    (escenario ? 'ESCENARIO PREDEFINIDO: ' + escenario + '\nINSTRUCCIÓN: Usa como BASE el template de este escenario. OBLIGATORIO: si hay detalles adicionales, debes incorporarlos dentro de la respuesta — adapta el template para que refleje exactamente los puntos y la información específica que el usuario indicó. Los detalles no son opcionales, son el contenido central de la carta.\n' : '') +
     (contexto ? 'Contexto: ' + contexto + '\n' : '') +
-    (detalles ? 'Detalles adicionales a incorporar: ' + detalles + '\n' : '') +
+    (detalles ? 'DETALLES OBLIGATORIOS A INCLUIR EN LA CARTA: ' + detalles + '\n' : '') +
     '\nGenera la carta completa lista para enviar. Solo el texto de la carta, sin explicaciones.';
   try {
     var r = await fetch('https://models.inference.ai.azure.com/chat/completions',{
@@ -443,9 +444,10 @@ Estimado(a) [primer nombre],
 
 En atención a tu [petición/queja] presentada el pasado [DD/MM/AAAA], [con radicado XXXXX, ]dentro del término legal establecido en la Ley 1755 de 2015, damos respuesta en los siguientes términos:
 
-Queremos informarte que en Nu Financiera, damos una gran importancia a la transparencia en todas nuestras interacciones por lo que nos esforzamos por brindarte información precisa y clara sobre nuestros productos y servicios. Además, nos comprometemos a garantizar la seguridad de tus datos y transacciones.
+⚠️ PÁRRAFO INAMOVIBLE — JAMÁS LO OMITAS, sin importar el escenario, el contexto o los detalles adicionales. Cópialo textualmente siempre:
+"Queremos informarte que en Nu Financiera, damos una gran importancia a la transparencia en todas nuestras interacciones por lo que nos esforzamos por brindarte información precisa y clara sobre nuestros productos y servicios. Además, nos comprometemos a garantizar la seguridad de tus datos y transacciones."
 
-[CUERPO DE LA RESPUESTA]
+[CUERPO DE LA RESPUESTA — aquí va el template del escenario más cualquier información adicional solicitada]
 
 Habiendo respondido en profundidad tu [petición/queja], te recordamos que estamos para ayudarte con lo que necesites.
 
@@ -463,17 +465,25 @@ Usa estos marcadores con MUCHA moderación:
 - Para listas: usa - ítem en líneas separadas.
 - Una sola línea en blanco entre párrafos.
 
+## RESPUESTA CON MÚLTIPLES PUNTOS
+Cuando el cliente solicita respuesta a varios puntos o preguntas, usa este formato para cada uno:
+1. [Título breve que describe de qué trata este punto]: Respuesta al punto...
+2. [Título breve que describe de qué trata este punto]: Respuesta al punto...
+
+El título debe ser un resumen conciso del tema del punto (ej: "Certificación de fecha de cancelación", "Estado de la deuda", "Póliza de seguros"). Esto ayuda al cliente a identificar rápidamente a qué punto corresponde cada respuesta. Si en los detalles el usuario usa palabras como PRIMERO, SEGUNDO, o numera los puntos, usa exactamente ese mismo esquema.
+
 ## NUNCA
 Admitir culpa, revelar info interna, comprometer fechas no autorizadas, prometer devoluciones, mencionar empleados, contradecir contratos, usar lenguaje informal.
 
 ## CÓMO CITAR CONTRATOS — OBLIGATORIO, EXACTO Y COMPLETO
 
-REGLAS ABSOLUTAS AL CITAR UN CONTRATO:
+REGLA DE ORO: Si el tema de la carta tiene relación con algún contrato o T&C (cupo, cancelación, mora, puntos, avances, compras internacionales, seguro, fallecimiento, tarjeta amparada, etc.), DEBES citar el contrato. No es opcional. Identifica activamente qué cláusula aplica y cítala textualmente.
+
+REGLAS AL CITAR:
 1. SIEMPRE menciona el nombre del apartado o sección exacta (entre comillas).
-2. SIEMPRE incluye el número de página.
-3. SIEMPRE usa el link con #page=N.
-4. SIEMPRE incluye la cita textual del contrato (entre comillas).
-5. NUNCA digas solo "donde se establece que..." sin el nombre del apartado y la página.
+2. SIEMPRE incluye el número de página o cláusula.
+3. SIEMPRE incluye la cita textual del contrato (entre comillas).
+4. NUNCA digas solo "donde se establece que..." sin el nombre del apartado.
 
 FORMATO OBLIGATORIO — cópialo exactamente así:
 "Lo anterior se encuentra estipulado en el **[nombre del contrato]** (disponible en: [LINK#page=N]), específicamente en la página [N], en el apartado **"[Nombre exacto del apartado]"**, donde se establece expresamente que: '[CITA TEXTUAL DEL CONTRATO]'."
@@ -481,39 +491,48 @@ FORMATO OBLIGATORIO — cópialo exactamente así:
 EJEMPLO CORRECTO:
 "Lo anterior se encuentra estipulado en el Contrato de Tarjeta de Crédito (disponible en: https://contracts.nu.com.co/credit-card/contrato-version-3.pdf#page=2), específicamente en la página 2, en el apartado "Aumento de tu Cupo de Crédito", donde se establece expresamente que: 'El aumento de tu Cupo de Crédito solo podrá ser realizado por Nu, de acuerdo con sus políticas internas y previa autorización tuya.'"
 
-## CONTRATOS, PÁGINAS Y CITAS EXACTAS
+## CONTRATOS — CITAS EXACTAS POR CASO
 
-TARJETA DE CRÉDITO (TC):
-- Aumento de cupo → https://contracts.nu.com.co/credit-card/contrato-version-3.pdf#page=2
-  Sección: "Aumento de tu Cupo de Crédito"
-  CITA EXACTA: "El aumento de tu Cupo de Crédito solo podrá ser realizado por Nu, de acuerdo con sus políticas internas y previa autorización tuya."
-- Reducción de cupo → https://contracts.nu.com.co/credit-card/contrato-version-3.pdf#page=2
-  Sección: "Aumento de tu Cupo de Crédito" (págs 2-3)
-  CITA EXACTA: "Nu revisará periódicamente tu comportamiento crediticio y podrá ajustar tu Cupo de Crédito según sus políticas internas y la información disponible en centrales de riesgo."
-- Cancelación con deuda → https://contracts.nu.com.co/credit-card/contrato-version-3.pdf#page=23
-  Sección: "Cancelación de tu Cupo de Crédito y Tarjeta de Crédito Nu"
-  CITA EXACTA: "El contrato se dará por terminado de forma definitiva una vez hayas pagado todo lo que debes."
-- Compras internacionales → https://contracts.nu.com.co/credit-card/contrato-version-3.pdf#page=13
-  Sección: "Uso de la Tarjeta de Crédito Nu en el Exterior"
+Formato: "...estipulado en el **[Contrato X]** ([LINK#page=N]), página [N]/cláusula [X], apartado **"[Sección]"**: '[CITA TEXTUAL]'."
 
-CUENTA DE AHORROS (CA):
-- Cancelación con saldo → https://contracts.nu.com.co/savings-account/contrato-version-3.pdf#page=15
-  Sección: "17. Vigencia y terminación"
-  CITA EXACTA: "Puedes cancelarla en cualquier momento a través de la Aplicación Nu, retirando o transfiriendo la totalidad del saldo."
-- Seguros FOGAFIN → https://contracts.nu.com.co/savings-account/contrato-version-3.pdf#page=11
-  Sección: Capítulo IX, numeral 9.2.2
+TC (https://contracts.nu.com.co/credit-card/contrato-version-3.pdf):
+[p.2] Aumento cupo: "El aumento de tu Cupo de Crédito solo podrá ser realizado por Nu, de acuerdo con sus políticas internas y previa autorización tuya."
+[p.3] Ajuste/reducción: "Nu revisará periódicamente tu comportamiento crediticio y podrá ajustar tu Cupo de Crédito según sus políticas internas." / "Nu puede cancelar, suspender, reducir o ajustar tu Cupo de Crédito en cualquier momento."
+[p.12] Avances: "Los avances que realices se difieren en 36 cuotas mensuales." Intereses desde el día del avance; comisión en 1 cuota sin intereses.
+[p.13] Internacional: "Compras iguales o mayores a $60.000 COP: se difieren automáticamente a 24 cuotas. Compras menores a $60.000 COP: se difieren automáticamente a 1 cuota." Conversión vía tasa MasterCard.
+[p.14] Bloqueo mora: mora >4 días = bloqueo; mora >180 días = desbloqueo imposible aunque pague.
+[p.14-16] Reversión: plazo 24h; casos: fraude / compra no solicitada / producto defectuoso o no entregado. Respuesta máx. 15 días hábiles (180 si internacional).
+[p.23] Cancelación con deuda: "El Contrato se dará por terminado de forma definitiva una vez hayas pagado todo lo que debes."
+[p.28-29] Amparada: "la responsabilidad de ese cupo es siempre tuya." Titular ve TODAS las compras del amparado en su extracto.
 
-TARJETA ABRE CAMINO (TAC):
-- Link base: https://contracts.nu.com.co/secured-card/contrato-version-2.pdf
-- Citar SIEMPRE cuando el cliente mencione "Abre Camino" o "tarjeta garantizada".
-- Esta tarjeta funciona con depósito de seguridad. Condiciones distintas a la TC regular.
-- Usar #page=N si conoces la página específica del apartado relevante.
+CA (https://contracts.nu.com.co/savings-account/contrato-version-3.pdf):
+[cláus.17] Cancelación con saldo: "La Cuenta Nu no tiene un término de vigencia definido, pero puedes cancelarla en cualquier momento a través de la Aplicación Nu, retirando o transfiriendo la totalidad del saldo."
+[cláus.14.3] FOGAFIN: "Los depósitos que realices en tu Cuenta Nu estarán protegidos por el seguro de depósito administrado por FOGAFIN, hasta el límite máximo de protección según lo establecido por dicha entidad."
+[cláus.14.1] Fallecimiento: "Nu podrá entregar directamente al cónyuge sobreviviente o a los herederos, sin necesidad de un proceso de sucesión, las sumas depositadas hasta el límite máximo permitido por ley."
+[cláus.14.6] Cuenta inactiva: sin movimientos durante 6 meses consecutivos.
+[cláus.4.8] Compensación mora: Nu puede debitar CA/Cajitas para cubrir deudas morosas.
 
-T&C NU PLUS: https://cdn.nubank.com.br/colombia/terminos-y-condiciones-nu-plus.pdf
-- Meta de gasto → Párrafo 4
+TAC (https://contracts.nu.com.co/secured-card/contrato-version-2.pdf) — CITAR cuando cliente diga "Abre Camino"/"tarjeta garantizada":
+[secc.2-3] Cupo: "El Cupo de Crédito se determina con base en los recursos que depositas en tu Cajita de Respaldo." Aumentarlo = depositar más dinero.
+[secc.4] Respaldo: "El Dinero de Respaldo es un Depósito en Garantía a favor de Nu, constituido automáticamente desde tu Cajita de Respaldo."
+[secc.5] Cuotas: avances/internacionales <$60k: 1 cuota; ≥$60k: 24 cuotas.
+[secc.10] Mora: mora ≥90 días = causal de terminación; Nu puede exigir pago inmediato total.
+[secc.20] Cancelación: sin penalidad si deuda en $0.
 
-FOGAFIN: https://www.fogafin.gov.co/
-MASTERCARD: https://www.mastercard.com.co/es-co/consumidores/conozca-nuestras-ofertas-y-promociones.html
+Nu Plus T&C (v9, jun.2026): https://cdn.nubank.com.br/colombia/terminos-y-condiciones-nu-plus.pdf
+Formato cita Nu Plus: "...estipulado en los T&C Nu Plus ([URL]), numeral [N], **"[Nombre]"**: '[CITA]'."
+[N2] Meta $900k/período; activación automática; "La acumulación de Puntos se activa de inmediato."
+[N3] Elegibilidad: ser cliente + cumplir meta + aceptar T&C en app antes del día 20.
+[N4] No acumulan puntos: transferencias, PSE, retiros, avances en efectivo.
+[N5] Beneficio automático: 0,5% EA adicional en Cajitas desde el siguiente mes.
+[N6a] Reducción tasa: aplica solo para compras antes de 1ra fecha de corte, diferidas >1 cuota.
+[N9] Vencen puntos: tras 6 meses consecutivos sin cumplir Criterios de Elegibilidad.
+[N11] Bloqueo temporal (mora 5-180 días): no acumula, no redime, se desactiva rendimiento Cajitas.
+[N12] Exclusión definitiva: mora >180 días / fallecimiento / cancelar productos / desvincularse.
+[N13] Restricciones: puntos no son dinero; intransferibles; no acumulan por avances/retiros.
+[N14] Vigencia: hasta 31 enero 2027.
+
+FOGAFIN: https://www.fogafin.gov.co/ | MASTERCARD: https://www.mastercard.com.co/es-co/consumidores/conozca-nuestras-ofertas-y-promociones.html
 
 ## CALIDAD Y PROFUNDIDAD DE LA RESPUESTA — MUY IMPORTANTE
 
@@ -637,7 +656,7 @@ Tus compras actuales te están ayudando a cumplir el requisito:
 - Si cumples con $900.000 antes del día 27, Nu Plus se activa inmediatamente.
 - Si lo cumples después del 27, la activación se realizará el 1 del mes siguiente.
 
-Para más detalles consulta los Términos y Condiciones de Nu Plus: https://cdn.nubank.com.br/colombia/terminos-y-condiciones-nu-plus.pdf
+Lo anterior está estipulado en los Términos y Condiciones de Nu Plus (disponible en: https://cdn.nubank.com.br/colombia/terminos-y-condiciones-nu-plus.pdf), específicamente en el **numeral 2, "¿Qué debo hacer para tener Nu Plus?"**, donde se establece que: "Para tener Nu Plus debes cumplir con el gasto mínimo por un valor de COP$900.000 en compras acumuladas con tus Tarjetas de Crédito Nu y/o tu Tarjeta Débito Nu, y pagos de servicios públicos y recargas de celular a través de la App Nu, dentro de un Periodo."
 
 --- NU PLUS: MISIÓN REFERIDOS ---
 La recompensa de Nu Plus por referidos está limitada a una (1) sola vez por usuario. No es acumulable con la meta de gasto mensual. La activación de la misión se realiza automáticamente por el sistema para un grupo seleccionado de clientes y no puede activarse manualmente.
@@ -656,25 +675,21 @@ Lo anterior está estipulado en el Contrato de Tarjeta de Crédito (https://cont
 --- PAGARÉ / FIRMA DIGITAL ---
 La suscripción del pagaré es un requisito estándar para el funcionamiento de tu producto de crédito. El proceso de firma digital fue notificado a través de la app y el soporte fue enviado por administrador@pagares.bvc.com.co. La firma es completamente trazable en nuestros sistemas con fecha y hora exacta.
 
---- DEFUNCIÓN: ERA CLIENTE ---
-(Escenario: defuncion_era_cliente. Necesitas: nombre del fallecido, producto(s) activo(s), nombre del reclamante y parentesco)
-Recibe nuestras más sinceras condolencias por el fallecimiento de [nombre del fallecido]. En Nu Financiera entendemos la dificultad de estos momentos y queremos acompañarte en el proceso de manera cercana y diligente.
+--- DEFUNCIÓN: ERA CLIENTE (NO REPORTADA) ---
+(Escenario: defuncion_era_cliente. Usa este texto BASE, adapta el nombre del fallecido)
+Inicialmente, mencionarte que sentimos mucho la pérdida de [nombre del fallecido], sabemos que no es un momento fácil, por lo que te deseamos mucha fuerza para ti y toda la familia.
 
-Con respecto a los productos que [nombre del fallecido] tenía activos con nosotros, queremos informarte que para gestionar la cancelación y/o sucesión de dichos productos, el representante legal o heredero debe comunicarse con nosotros a través de los siguientes canales para iniciar el proceso correspondiente:
-- Chat de la App Nu
-- Línea telefónica: 01 800 917 2000 (desde Colombia) o 601 357 11 02 (Bogotá)
+Gracias por tu contacto, queremos contarte que el caso fue enviado al equipo responsable y luego del análisis recibirás información pertinente para dar continuidad al proceso, así que te pedimos revises el correo desde el cual nos escribes, ya que de parte del área encargada te enviaran información sobre los próximos pasos a seguir para concluir el producto que se encontraba a nombre del titular.
 
-Para adelantar el proceso se requerirá la documentación legal correspondiente (registro de defunción y documentos que acrediten la calidad de heredero o representante).
-
-Quedamos atentos y a tu disposición para acompañarte en este proceso.
+Recuerda que si presentas alguna inquietud relacionada con el proceso puedes remitirnos la información a través del correo (ayuda@nu.com.co), puesto que por este medio llevaremos la gestión correspondiente.
 
 --- DEFUNCIÓN: NO ERA CLIENTE ---
-(Escenario: defuncion_no_cliente)
-Recibe nuestras más sinceras condolencias por el fallecimiento de tu ser querido. En Nu Financiera entendemos la dificultad de estos momentos.
+(Escenario: defuncion_no_cliente. Usa este texto BASE, adapta el nombre)
+Inicialmente, mencionarte que sentimos mucho la pérdida de [nombre del fallecido], sabemos que no es un momento fácil, por lo que te deseamos mucha fuerza para ti y toda la familia.
 
-Luego de realizar la validación en nuestros sistemas, queremos informarte que [nombre del fallecido] no registra ningún producto activo ni obligación financiera con Nu Financiera. Por lo tanto, no existe ningún proceso pendiente con nuestra entidad relacionado con esta persona.
+Una vez realizadas las validaciones correspondientes en nuestros sistemas con los datos proporcionados, te confirmamos que el señor(a) [nombre del fallecido] no cuenta con ningún producto vigente, ni presenta registros de productos cancelados con nosotros.
 
-Si tienes alguna otra inquietud o necesitas un certificado de no deuda, puedes comunicarte con nosotros a través del chat de la App Nu o a nuestra línea 01 800 917 2000.
+Por lo anterior, queremos darte total claridad de que dicha persona no figura en nuestras bases de datos como cliente activo ni inactivo de Nu Colombia.
 
 --- TEMA NUEVO ---
 Si el contexto no coincide con ningún template anterior, redacta desde cero manteniendo EXACTAMENTE la misma estructura, tono y formato. Responde el punto central del cliente con empatía y claridad. Si el caso tiene relación con algún contrato, cítalo con el link completo y la sección exacta.`;
